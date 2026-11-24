@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#059669">
+  <meta name="description" content="小学 1~6 年级英语核心词汇记忆系统 - 词域探险家">
+  <title>词域探险家 · 英语单词记忆系统</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="shortcut icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body class="theme-sprite">
+  <!-- 全局荧光粒子散射画布 (鼠标点击处 360 度爆裂荧光粒子与拖尾) -->
+  <canvas id="globalParticleCanvas"></canvas>
+
+
+  <!-- ================= 启程画面：灵宠互动欢迎幕 (带粒子动态画布) ================= -->
+  <!-- ================= 启程画面：对标图 2 (胶囊切换 + 无框微光漂浮 + 每日鼓励语 + 高清童话壁纸) ================= -->
+  <div class="splash-overlay theme-sprite" id="splashScreen">
+    <div class="splash-bg-layer" id="splashBgLayer" style="background-image: url('assets/bg/jungle.jpg');"></div>
+    <canvas id="splashCanvas"></canvas>
+
+    <!-- 右上角轻巧胶囊切换栏 (4 大世界唯美背景自由切换) -->
+    <div class="splash-top-capsule">
+      <button class="capsule-theme-btn active" data-pet="sprite" onclick="window.app.selectPet('sprite')">🍃 恐龙雨林</button>
+      <button class="capsule-theme-btn" data-pet="drake" onclick="window.app.selectPet('drake')">🏰 云端城堡</button>
+      <button class="capsule-theme-btn" data-pet="fox" onclick="window.app.selectPet('fox')">🐋 星空巨鲸</button>
+      <button class="capsule-theme-btn" data-pet="unicorn" onclick="window.app.selectPet('unicorn')">🦄 糖果仙境</button>
+    </div>
+
+    <!-- 居中无框通透排版 (与大世界星空背景深度融合) -->
+    <div class="splash-glass-card">
+      <div class="splash-icon-glow" id="splashPetIcon">🍃</div>
+      <h1 class="splash-title-text">词域探险家</h1>
+      <div class="splash-current-world" id="splashWorldName">翡翠雨林世界</div>
+      
+      <!-- 每日元气随机励志语 (每次打开都不同) -->
+      <div class="splash-daily-quote" id="splashDailyQuote">
+        🌟 每一个背会的新单词，都是点亮未来星空的小火苗！
+      </div>
+
+      <div>
+        <button class="btn-glass-enter" id="btnEnterApp">
+          点击进入 ➔
+        </button>
+      </div>
+      <div class="splash-keyboard-hint">按 Enter 或 空格键 快捷进入</div>
+    </div>
+  </div>
+
+  <!-- ================= 桌面端双层联动冻结吸顶总成 (系统状态栏 + 导航栏协同固定) ================= -->
+  <div class="desktop-header-dock">
+    <header class="top-system-bar">
+      <div class="system-brand-group">
+        <div class="system-logo-badge">⚡</div>
+        <div class="system-title-wrap">
+          <div class="system-title-row">
+            <span class="system-main-title">词域探险家</span>
+            <span class="system-version-pill" id="topThemePill">恐龙雨林版 v2.2.0</span>
+          </div>
+          <span class="system-sub-title">Word Explorer · 小学 1~6 年级核心词汇记忆系统</span>
+        </div>
+      </div>
+
+      <!-- 顶部右侧状态控制台 (已彻底精简灵宠配置标签，保持顶栏清爽) -->
+      <div class="system-status-group">
+        <!-- 已精通单词数统计 (移至原返回首页位置) -->
+        <div class="stat-pill-clean">
+          <span style="color: var(--text-muted); font-size: 12px;">已精通</span>
+          <strong style="color: var(--theme-primary); font-family: var(--font-mono); margin-left: 4px;" id="hudMasteredCount">0 / 0</strong>
+        </div>
+
+        <!-- 计时器控制台 -->
+        <div class="hud-timer-controls">
+          <div class="timer-digits-box">
+            <div class="timer-indicator-dot" id="timerDot" title="计时状态"></div>
+            <span class="timer-display" id="hudTimerDisplay">00:00</span>
+            <span style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono);" id="hudTargetDisplay">/ 60:00</span>
+          </div>
+          <button class="timer-btn" id="btnToggleTimer" title="暂停 / 继续计时" aria-label="暂停 / 继续计时">
+            ⏸️
+          </button>
+          <button class="timer-btn danger" id="btnResetTimer" title="时间清零 (重新开始计时)" aria-label="时间清零 (重新开始计时)">
+            🔄
+          </button>
+        </div>
+
+        <!-- 返回启程首页 (随时换世界) 按钮 (移至最右上角) -->
+        <button class="btn-clean secondary" id="btnExitToSplash" title="返回启程首页 (切换大世界)" style="padding: 6px 14px; font-size: 13px; font-weight: 800; border-radius: 999px; background: #f8fafc; border-color: #cbd5e1; color: #334155;">
+          🏠 返回首页
+        </button>
+      </div>
+    </header>
+
+    <!-- ================= 第二层：下沉式独立二级导航栏 (PC端吸顶冻结 · 手机端自动沉底为原生导航Dock) ================= -->
+    <nav class="sub-nav-bar" id="subNavBar">
+      <button class="sub-nav-btn active" data-view="training">
+        <span class="nav-icon">🚀</span>
+        <span class="nav-text">今日挑战</span>
+      </button>
+      <button class="sub-nav-btn" data-view="games">
+        <span class="nav-icon">🎮</span>
+        <span class="nav-text">单词游戏</span>
+      </button>
+      <button class="sub-nav-btn" data-view="mistakes">
+        <span class="nav-icon">🎯</span>
+        <span class="nav-text">错题库</span>
+      </button>
+      <button class="sub-nav-btn" data-view="analytics">
+        <span class="nav-icon">📊</span>
+        <span class="nav-text">家长看板</span>
+      </button>
+      <button class="sub-nav-btn" data-view="settings">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-text">词库配置</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ================= 主操作区 ================= -->
+  <main class="main-wrapper">
+  <!-- 全屏沉浸模式极细顶部步进条 (无压迫感 · 仅保留计时器与退出按钮) -->
+  <div class="focus-hairline-header" id="focusHairlineHeader">
+    <div class="focus-header-left">
+      <span class="focus-mode-icon">⏱️</span>
+      <span class="timer-display" id="focusTimerDisplay">00:00</span>
+    </div>
+
+    <div class="focus-stepper-line">
+      <div class="focus-step-dot active" data-step="1">
+        <span class="focus-dot-badge">1</span>
+        <span class="step-label">读写学词</span>
+        <span class="step-label-short">读写</span>
+      </div>
+      <span class="focus-arrow">➔</span>
+      <div class="focus-step-dot" data-step="2">
+        <span class="focus-dot-badge">2</span>
+        <span class="step-label">看图默写</span>
+        <span class="step-label-short">默写</span>
+      </div>
+      <span class="focus-arrow">➔</span>
+      <div class="focus-step-dot" data-step="3">
+        <span class="focus-dot-badge">3</span>
+        <span class="step-label">听音辨义</span>
+        <span class="step-label-short">听音</span>
+      </div>
+    </div>
+
+    <div class="focus-header-right">
+      <button class="btn-clean secondary" id="btnFocusVictorySummary" title="查看今日战报" style="padding: 4px 12px; font-size: 12px; border-radius: 999px;">
+        🏆 今日战报
+      </button>
+      <button class="btn-clean danger btn-exit-focus-btn" id="btnExitFocusMode" title="退出专注模式返回主页面">
+        ✕ 退出
+      </button>
+    </div>
+  </div>
+
+
+    <!-- ================= 视图 1: 今日挑战 (4 关连环差异化游戏) ================= -->
+    <section class="view-panel active" id="view-training">
+
+      <!-- 3 关卡紧凑向导卡组 (读写学词 ➔ 看图默写 ➔ 听音辨义) -->
+      <div class="quest-stepper-deck">
+        <!-- 环节 1: 读写学词 -->
+        <div class="quest-card-item active" data-step="1">
+          <div class="quest-card-top">
+            <span class="exam-type-badge reading">【🗣️ 读写学词】</span>
+            <span class="quest-time-tag">约 20 分钟</span>
+          </div>
+          <div class="quest-card-title">自然拼读与键盘敲写</div>
+          <div class="quest-card-desc">自然拼读拆解，朗读跟读 3 遍 + 键盘敲写一遍，四维掌握</div>
+        </div>
+
+        <!-- 环节 2: 看图默写 -->
+        <div class="quest-card-item" data-step="2">
+          <div class="quest-card-top">
+            <span class="exam-type-badge writing">【✍️ 看图默写】</span>
+            <span class="quest-time-tag">约 20 分钟</span>
+          </div>
+          <div class="quest-card-title">看图默写与拼写决斗</div>
+          <div class="quest-card-desc">看实物图与中文释义，键盘盲打全拼默写，击退暗影怪兽</div>
+        </div>
+
+        <!-- 环节 3: 听音辨义 -->
+        <div class="quest-card-item" data-step="3">
+          <div class="quest-card-top">
+            <span class="exam-type-badge listening">【🎧 听音辨义】</span>
+            <span class="quest-time-tag">约 10 分钟</span>
+          </div>
+          <div class="quest-card-title">听音辨义与闪电反应</div>
+          <div class="quest-card-desc">纯听原生标准发音，快速选择正确中文含义，训练听觉反射</div>
+        </div>
+      </div>
+
+      <!-- 关卡轻量控制条 (紧凑收敛，告别突兀大卡片) -->
+      <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 12px; gap: 10px;">
+        <button class="btn-clean secondary" id="btnToggleTodayFullscreen" style="font-size: 13px; padding: 6px 14px; font-weight: 700; border-radius: 999px;">
+          🖥️ 进入全屏专注
+        </button>
+        <button class="btn-clean secondary" id="btnLobbyViewSummary" style="font-size: 13px; padding: 6px 14px; font-weight: 700; border-radius: 999px;">
+          🏆 查看今日战报
+        </button>
+      </div>
+
+      <!-- 差异化关卡交互区 (专注全屏模式下全尺寸呈现) -->
+      <div class="stage-interactive-box">
+
+        <!-- ---------------- 环节 01 专属交互：【读写学词】双栏协同 (左侧双图视听学词 + 右侧独立打字键盘) ---------------- -->
+        <div id="stage1-container" class="stage-sub-view">
+          
+          <!-- 关卡顶部极简标头 -->
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 14px; font-weight: 800; color: #0f172a;">
+                🗣️ 环节 1 · 读写学词
+              </span>
+              <span style="font-size: 12px; color: var(--text-muted);">
+                (双图具象记忆 · 听音拼读拆解 · 键盘盲打敲写)
+              </span>
+            </div>
+            <span class="quest-number-tag" id="phonicsGradeTag" style="font-size: 12px;">3 年级</span>
+          </div>
+
+          <!-- 双栏协同区域 -->
+          <div class="stage1-dual-grid">
+
+            <!-- ===================== 左栏：视听·拼读学词翼 (取消图示说明，专注纯净学词) ===================== -->
+            <div class="stage1-left-panel">
+
+              <!-- 1. 自然拼读音节切块 (纯净胶囊直接居中呈现) -->
+              <div style="margin: 0; text-align: center;">
+                <div class="syllable-chips-row" id="syllablesContainer" style="justify-content: center; margin-bottom: 0;">
+                  <!-- 动态音节切块 -->
+                </div>
+              </div>
+
+              <!-- 2. 核心词汇卡片与释义 (规整居中 · 杜绝向左跑偏) -->
+              <div class="stage1-vocab-card">
+                <div style="display: flex; align-items: baseline; justify-content: center; gap: 10px; flex-wrap: wrap;">
+                  <span style="font-size: 32px; font-weight: 900; color: #0f172a; font-family: var(--font-mono);" id="phonicsWordDisplay">Friday</span>
+                  <span style="font-size: 17px; font-weight: 700; color: var(--sky-blue); font-family: var(--font-mono);" id="phonicsPhoneticDisplay">/ˈfraɪdeɪ/</span>
+                </div>
+                <!-- 释义药丸胶囊居中对齐 -->
+                <div style="margin: 10px 0 6px; text-align: center;">
+                  <span class="vocab-meaning-pill" id="phonicsMeaning">星期五</span>
+                </div>
+                <div style="font-size: 14px; color: var(--text-secondary); font-style: italic; text-align: center; margin-top: 4px;" id="phonicsExample">Friday evening is relaxing.</div>
+              </div>
+
+              <!-- 3. 纯净原声单词与大声朗读 3 遍打卡 (听原声不计入次数，大声朗读才计入) -->
+              <div class="stage1-listening-control-box">
+                <div class="reading-stars-row" style="margin-bottom: 10px; justify-content: center; gap: 8px;">
+                  <span style="font-size: 13px; font-weight: 800; color: #334155;">🗣️ 朗读打卡:</span>
+                  <div class="read-star-chip" id="readStar1">1</div>
+                  <div class="read-star-chip" id="readStar2">2</div>
+                  <div class="read-star-chip" id="readStar3">3</div>
+                </div>
+
+                <!-- 动态录音声波反馈条 -->
+                <div id="recordingFeedbackBox" style="display: none; margin: 6px 0; padding: 6px 14px; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 999px; align-items: center; justify-content: center; gap: 8px;">
+                  <span class="rec-pulse-dot" style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; animation: blinkDot 0.8s infinite alternate;"></span>
+                  <span style="font-size: 12px; font-weight: 800; color: #065f46;" id="recordingStatusText">🎙️ 正在录音，请清晰朗读...</span>
+                </div>
+
+                <div style="display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;">
+                  <button class="btn-clean secondary" id="btnPhonicsSpeakWord" style="padding: 8px 18px; font-size: 13px; font-weight: 700;">
+                    🔊 听原声单词 (空格键)
+                  </button>
+                  <button class="btn-clean primary" id="btnPhonicsRecord" style="padding: 8px 20px; font-size: 13px; font-weight: 800;">
+                    🎙️ 开启大声朗读 (第 1 遍)
+                  </button>
+                  <button class="btn-clean" id="btnPlayMyRecording" style="display: none; padding: 8px 14px; font-size: 13px; background: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd;">
+                    ▶️ 回听我的发音
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- ===================== 右栏：键盘·打字翼 (下划线与键盘汇聚居中，舒适自然) ===================== -->
+            <div class="stage1-right-panel">
+              
+              <!-- 居中输入控制总成 -->
+              <div class="stage1-typing-center-unit">
+                
+                <!-- 纯净下划线打字视窗 (无多余文字，居中舒适) -->
+                <div class="stage1-underlines-window" id="phonicsTypeWindow">
+                  <div class="stage1-underlines-row" id="phonicsTypeSlots">
+                    <!-- 动态渲染下划线 -->
+                  </div>
+                </div>
+
+                <!-- 常驻全功能虚拟键盘 -->
+                <div class="stage1-onscreen-keyboard" id="phonicsOnScreenKeyboard">
+                  <div class="kb-row">
+                    <button class="kb-key" data-key="Q">Q</button>
+                    <button class="kb-key" data-key="W">W</button>
+                    <button class="kb-key" data-key="E">E</button>
+                    <button class="kb-key" data-key="R">R</button>
+                    <button class="kb-key" data-key="T">T</button>
+                    <button class="kb-key" data-key="Y">Y</button>
+                    <button class="kb-key" data-key="U">U</button>
+                    <button class="kb-key" data-key="I">I</button>
+                    <button class="kb-key" data-key="O">O</button>
+                    <button class="kb-key" data-key="P">P</button>
+                  </div>
+                  <div class="kb-row">
+                    <button class="kb-key" data-key="A">A</button>
+                    <button class="kb-key" data-key="S">S</button>
+                    <button class="kb-key" data-key="D">D</button>
+                    <button class="kb-key" data-key="F">F</button>
+                    <button class="kb-key" data-key="G">G</button>
+                    <button class="kb-key" data-key="H">H</button>
+                    <button class="kb-key" data-key="J">J</button>
+                    <button class="kb-key" data-key="K">K</button>
+                    <button class="kb-key" data-key="L">L</button>
+                  </div>
+                  <div class="kb-row">
+                    <button class="kb-key action-key" data-key="CLEAR" style="font-size: 12px; min-width: 44px;">清空</button>
+                    <button class="kb-key" data-key="Z">Z</button>
+                    <button class="kb-key" data-key="X">X</button>
+                    <button class="kb-key" data-key="C">C</button>
+                    <button class="kb-key" data-key="V">V</button>
+                    <button class="kb-key" data-key="B">B</button>
+                    <button class="kb-key" data-key="N">N</button>
+                    <button class="kb-key" data-key="M">M</button>
+                    <button class="kb-key action-key" data-key="BACKSPACE" style="font-size: 13px; min-width: 50px;">⌫ 退格</button>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- 底部流转控制 -->
+              <div class="stage1-flow-actions">
+                <button class="btn-clean secondary" id="btnPhonicsRetry" style="padding: 7px 14px; font-weight: 700; font-size: 13px;">
+                  🔄 再试一次
+                </button>
+                <button class="btn-clean danger" id="btnPhonicsSkipMistake" style="padding: 7px 14px; font-weight: 700; font-size: 13px; color: var(--coral-red); background: #fef2f2; border: 1px solid #fecaca;">
+                  ⏭️ 跳过本词
+                </button>
+                <button class="btn-clean primary" id="btnPhonicsNextWord" style="display: none; padding: 7px 18px; font-weight: 800; font-size: 13px;">
+                  🎉 下一个词 ➔
+                </button>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ---------------- 环节 02 专属交互：【看图默写】首领看图拼写决斗 (实物具象图 + 盲打扣血) ---------------- -->
+        <div id="stage2-container" class="stage-sub-view" style="display: none;">
+          <!-- 顶部状态栏：头像与暗影怪兽同排，右上角小巧进度胶囊 -->
+          <div class="boss-duel-header">
+            <div class="boss-monster-card">
+              <div class="boss-avatar-box" id="bossAvatar">👾</div>
+              <div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <strong style="font-size: 15px; color: #0f172a;" id="bossTitle">暗影怪兽 · 词界哨兵</strong>
+                </div>
+                <div class="boss-hp-track">
+                  <div class="boss-hp-bar" id="bossHpBar" style="width: 100%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="display: flex; align-items: center; gap: 6px; background: #fffbeb; border: 1px solid rgba(245, 158, 11, 0.3); padding: 4px 12px; border-radius: 8px;">
+                <span style="font-size: 15px;">🔥</span>
+                <span style="font-size: 12px; font-weight: 800; color: var(--theme-accent);">COMBO</span>
+                <strong style="font-family: var(--font-mono); font-size: 15px; color: var(--theme-accent);" id="hudCombo">0</strong>
+              </div>
+              <span class="stage-progress-badge" id="stage2ProgressBadge">第 1 / 20 词 · 2年级</span>
+            </div>
+          </div>
+
+          <!-- 实物大场景展示卡片 -->
+          <div class="stage3-scene-container" style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 22px; text-align: center; margin-bottom: 16px;">
+            <div id="battleSceneIllustration" style="font-size: 64px; line-height: 1; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.08)); margin-bottom: 12px;">
+              🌟
+            </div>
+
+            <div id="battleSentenceEn" style="font-size: 22px; font-weight: 800; color: #1e293b; letter-spacing: 0.5px;">
+              <!-- 动态填入真实语境例句挖空 -->
+            </div>
+            <!-- 仅显示核心中文释义，杜绝直接给出答案 -->
+            <div id="battleSentenceCn" style="font-size: 15px; color: #475569; font-weight: 700; margin-top: 6px;">
+              凉爽的
+            </div>
+
+            <!-- 防剧透看答案折叠控制 -->
+            <div style="margin-top: 6px;">
+              <button class="stage2-answer-reveal-pill" id="btnRevealStage2Answer" onclick="window.app.toggleStage2Answer()">
+                👁️ 看答案提示
+              </button>
+              <div class="stage2-answer-box" id="stage2AnswerRevealBox">
+                正确拼写：<strong id="stage2AnswerWord" style="font-family: var(--font-mono); font-size: 15px; color: #1d4ed8; margin: 0 4px;">cool</strong>
+                <span id="stage2AnswerExample" style="color: #64748b; font-style: italic; margin-left: 6px;">Autumn breeze is nice and cool.</span>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px;">
+              <span style="font-family: var(--font-mono); font-size: 16px; font-weight: 700; color: var(--sky-blue);" id="battlePhonetic">/kuːl/</span>
+              <button class="timer-btn" id="btnBattleAudio" title="发音" style="width: 28px; height: 28px; font-size: 13px;">🔊</button>
+            </div>
+          </div>
+
+          <!-- 备选乱序字母活力彩色气泡 (改造成彩色微立体气泡) -->
+          <div class="battle-letter-bubbles-row" id="battleLetterBubbles">
+            <!-- 动态生成彩色气泡字母 -->
+          </div>
+
+          <!-- 拼写插槽 -->
+          <div class="stage1-underlines-row" id="letterSlots" style="margin: 12px 0 16px;">
+            <!-- 动态字母槽 -->
+          </div>
+
+          <!-- 软键盘 -->
+          <div class="stage1-onscreen-keyboard" id="onScreenKeyboard">
+            <div class="kb-row">
+              <button class="kb-key" data-key="Q">Q</button>
+              <button class="kb-key" data-key="W">W</button>
+              <button class="kb-key" data-key="E">E</button>
+              <button class="kb-key" data-key="R">R</button>
+              <button class="kb-key" data-key="T">T</button>
+              <button class="kb-key" data-key="Y">Y</button>
+              <button class="kb-key" data-key="U">U</button>
+              <button class="kb-key" data-key="I">I</button>
+              <button class="kb-key" data-key="O">O</button>
+              <button class="kb-key" data-key="P">P</button>
+            </div>
+            <div class="kb-row">
+              <button class="kb-key" data-key="A">A</button>
+              <button class="kb-key" data-key="S">S</button>
+              <button class="kb-key" data-key="D">D</button>
+              <button class="kb-key" data-key="F">F</button>
+              <button class="kb-key" data-key="G">G</button>
+              <button class="kb-key" data-key="H">H</button>
+              <button class="kb-key" data-key="J">J</button>
+              <button class="kb-key" data-key="K">K</button>
+              <button class="kb-key" data-key="L">L</button>
+            </div>
+            <div class="kb-row">
+              <button class="kb-key action-key" data-key="CLEAR" style="font-size: 12px; min-width: 44px;">清空</button>
+              <button class="kb-key" data-key="Z">Z</button>
+              <button class="kb-key" data-key="X">X</button>
+              <button class="kb-key" data-key="C">C</button>
+              <button class="kb-key" data-key="V">V</button>
+              <button class="kb-key" data-key="B">B</button>
+              <button class="kb-key" data-key="N">N</button>
+              <button class="kb-key" data-key="M">M</button>
+              <button class="kb-key action-key" data-key="BACKSPACE" style="font-size: 13px; min-width: 50px;">⌫ 退格</button>
+            </div>
+          </div>
+
+          <!-- 底部统一流转控制 (保持三大环节一致性) -->
+          <div class="stage-flow-actions" style="margin-top: 18px;">
+            <button class="btn-clean secondary" id="btnStage2Retry" style="padding: 7px 14px; font-weight: 700; font-size: 13px;">
+              🔄 再试一次
+            </button>
+            <button class="btn-clean danger" id="btnStage2Skip" style="padding: 7px 14px; font-weight: 700; font-size: 13px; color: var(--coral-red); background: #fef2f2; border: 1px solid #fecaca;">
+              ⏭️ 跳过本词
+            </button>
+            <button class="btn-clean primary" id="btnStage2Next" style="display: none; padding: 7px 18px; font-weight: 800; font-size: 13px;">
+              🎉 下一个词 ➔
+            </button>
+          </div>
+
+        </div>
+
+        <!-- ---------------- 环节 03 专属交互：【听音辨义】纯原生发音 · 快速四选一 ---------------- -->
+        <div id="stage3-container" class="stage-sub-view" style="display: none;">
+          <div class="flash-quiz-arena" style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+            
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+              <span style="font-size: 15px; font-weight: 800; color: #0f172a;">
+                🎧 环节 3 · 听音辨义
+              </span>
+              <span class="stage-progress-badge" id="stage3ProgressBadge">第 1 / 20 词 · 3年级</span>
+            </div>
+
+            <div class="flash-sound-trigger-box" style="text-align: center; margin-bottom: 22px;">
+              <!-- 醒目国际音标加发音播放 (英文单词保持隐藏，听音辨义) -->
+              <div id="flashPhoneticDisplay" style="font-family: var(--font-mono); font-size: 26px; font-weight: 800; color: var(--sky-blue); margin-bottom: 12px; letter-spacing: 0.5px;">
+                /naɪf/
+              </div>
+              <button class="btn-clean primary" id="btnFlashReplay" style="font-size: 16px; padding: 12px 34px; font-weight: 800; border-radius: 999px;">
+                🔊 播放单词发音 (空格键)
+              </button>
+            </div>
+
+            <!-- 4 选项大卡片网格 (高质感卡片与点中即时强反馈) -->
+            <div class="flash-options-grid" id="flashOptionsGrid">
+              <!-- 动态生成 4 张大卡片 -->
+            </div>
+
+            <!-- 底部统一流转控制 (保持三大环节一致性，移除多余提前结算按钮) -->
+            <div class="stage-flow-actions" style="margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 14px;">
+              <button class="btn-clean secondary" id="btnStage3Replay" style="padding: 7px 14px; font-weight: 700; font-size: 13px;">
+                🔊 重听单词
+              </button>
+              <button class="btn-clean danger" id="btnStage3Skip" style="padding: 7px 14px; font-weight: 700; font-size: 13px; color: var(--coral-red); background: #fef2f2; border: 1px solid #fecaca;">
+                ⏭️ 跳过本词
+              </button>
+              <button class="btn-clean primary" id="btnStage3Next" style="display: none; padding: 7px 18px; font-weight: 800; font-size: 13px;">
+                🎉 下一个词 ➔
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ================= 视图 2: 单词游戏竞技场 (3 款专为小学生设计的趣味闯关) ================= -->
+    <section class="view-panel" id="view-games">
+      <!-- 游戏顶部导航与出词设置入口 (不再常驻大卡片) -->
+      <div class="game-lobby-nav-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; position: relative;">
+        <!-- 左侧 3 大游戏切换标签 -->
+        <div class="game-tabs-selector" style="display: flex; gap: 8px;">
+          <button class="btn-clean primary" id="tabGameIgloo" onclick="window.app.switchGameTab('igloo')">
+            🏔️ 冰原推兵大作战
+          </button>
+          <button class="btn-clean secondary" id="tabGameMeteor" onclick="window.app.switchGameTab('meteor')">
+            🚀 星际消陨石
+          </button>
+          <button class="btn-clean secondary" id="tabGameMatch" onclick="window.app.switchGameTab('match')">
+            ⚡ 单词连连看
+          </button>
+        </div>
+
+        <!-- 右侧简洁说明与全屏入口 (彻底去掉弹窗浮层，直接自动套用后台设定) -->
+        <div class="game-scope-info-bar" style="display: flex; align-items: center; gap: 12px;">
+          <span class="game-scope-badge" style="font-size: 12px; color: #64748b; background: #f8fafc; border: 1px solid #e2e8f0; padding: 5px 14px; border-radius: 999px;">
+            ⚙️ 游戏出词范围已自动套用【家长看板】与【词库配置】设定
+          </span>
+          <button class="btn-clean secondary game-fullscreen-btn" id="btnToggleGameFullscreen" onclick="window.app.toggleGameFullscreen()" style="font-size: 13px; padding: 6px 14px; font-weight: 700;">
+            🖥️ 全屏游戏
+          </button>
+        </div>
+      </div>
+
+      <!-- 游戏 1: 冰原推兵大作战 (对标小红书爆款图 3、4、5) -->
+      <div id="game-igloo-view" class="game-sub-view">
+        <div class="igloo-battle-arena">
+          <!-- 顶部双方基地血条 -->
+          <div class="igloo-bases-row">
+            <!-- 我方：企鹅队 -->
+            <div class="base-igloo-card">
+              <span style="font-size: 34px;">🐧</span>
+              <div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <strong style="color: #0284c7; font-size: 14px;">企鹅小分队 (玩家)</strong>
+                  <span class="quest-number-tag" style="background: #38bdf8; color: #fff;">我方基地</span>
+                </div>
+                <div class="base-hp-bar-track">
+                  <div class="base-hp-fill-player" id="iglooPlayerHp" style="width: 100%;"></div>
+                </div>
+                <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+                  生命值: <strong id="iglooPlayerHpText" style="color: #10b981;">100</strong> / 100
+                </div>
+              </div>
+            </div>
+
+            <!-- 中间倒计时与对决标志 -->
+            <div style="text-align: center;">
+              <span style="font-size: 26px; font-weight: 900; color: #e11d48;">⚔️ VS</span>
+              <div style="font-size: 13px; font-weight: 800; font-family: var(--font-mono); color: #0284c7; margin-top: 2px;" id="iglooBattleTimer">02:00</div>
+            </div>
+
+            <!-- 敌方：海豹队 -->
+            <div class="base-igloo-card">
+              <div style="text-align: right;">
+                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
+                  <span class="quest-number-tag" style="background: #f43f5e; color: #fff;">电脑AI</span>
+                  <strong style="color: #e11d48; font-size: 14px;">海豹联盟 (敌方)</strong>
+                </div>
+                <div class="base-hp-bar-track" style="margin-left: auto;">
+                  <div class="base-hp-fill-enemy" id="iglooEnemyHp" style="width: 100%;"></div>
+                </div>
+                <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+                  生命值: <strong id="iglooEnemyHpText" style="color: #f43f5e;">100</strong> / 100
+                </div>
+              </div>
+              <span style="font-size: 34px;">🦭</span>
+            </div>
+          </div>
+
+          <!-- 冰原雪道行军通道 -->
+          <div class="ice-river-lane" id="iceRiverLane">
+            <div style="position: absolute; left: 16px; font-size: 22px; opacity: 0.8;">⛺ 企鹅营地</div>
+            <div style="position: absolute; right: 16px; font-size: 22px; opacity: 0.8;">海豹城堡 ⛺</div>
+            <div id="marchingTroopContainer" style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none;"></div>
+          </div>
+
+          <!-- 能量大招蓄力条 (对标图 4: 答对5题蓄满大招) -->
+          <div class="igloo-energy-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; background: rgba(255,255,255,0.85); padding: 8px 16px; border-radius: 12px; border: 1px solid #bfdbfe;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 14px; font-weight: 800; color: #0284c7;">⚡ 大招能量蓄力:</span>
+              <div style="width: 140px; height: 12px; background: #e2e8f0; border-radius: 6px; overflow: hidden;">
+                <div id="iglooEnergyFill" style="width: 0%; height: 100%; background: linear-gradient(90deg, #38bdf8, #f59e0b); transition: width 0.3s ease;"></div>
+              </div>
+              <span style="font-size: 13px; font-weight: 800; color: #ea580c;" id="iglooEnergyCount">0 / 5</span>
+            </div>
+
+            <button class="btn-ultimate-skill" id="btnIglooUltimate" onclick="window.app.castIglooUltimate()" disabled>
+              ❄️ 释放极地暴风雪 (清空敌军并对冰屋造成 15 伤害)
+            </button>
+          </div>
+
+          <!-- 问答出兵核心交互区 (对标图 3 下半部) -->
+          <div class="battle-question-box">
+            <div style="font-size: 13px; color: #64748b; margin-bottom: 4px;">
+              🎯 快速识别中文词义，答对派出一只小企鹅冲锋！
+            </div>
+            <div style="font-size: 30px; font-weight: 900; color: #0f172a; margin-bottom: 16px;" id="iglooQuestionWord">
+              书；书籍
+            </div>
+
+            <div class="flash-options-grid" id="iglooOptionsGrid">
+              <!-- 4 选 1 卡片 -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 游戏 2: 星际消陨石 (极速激光炮) -->
+      <div id="game-meteor-view" class="game-sub-view" style="display: none;">
+        <div class="asteroid-arena" style="background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%); border-radius: 18px; min-height: 420px; position: relative; overflow: hidden; padding: 20px; color: #fff;">
+          <div style="display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 10;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 20px;">🚀</span>
+              <strong style="font-size: 16px;">星际陨石拦截基地</strong>
+            </div>
+            <div style="display: flex; gap: 14px;">
+              <div class="stat-pill-clean" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2);">
+                <span style="color: #94a3b8; font-size: 12px;">基地护盾</span>
+                <strong style="color: #38bdf8; font-family: var(--font-mono); margin-left: 4px;" id="meteorShield">100%</strong>
+              </div>
+              <div class="stat-pill-clean" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2);">
+                <span style="color: #94a3b8; font-size: 12px;">击落陨石</span>
+                <strong style="color: #10b981; font-family: var(--font-mono); margin-left: 4px;" id="meteorScore">0</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- 坠落中的陨石 -->
+          <div id="meteorRock" style="position: absolute; top: 70px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #78350f, #451a03); border: 2px solid #f59e0b; padding: 14px 28px; border-radius: 24px; text-align: center; box-shadow: 0 0 20px rgba(245, 158, 11, 0.4); transition: top 0.3s ease;">
+            <div style="font-size: 12px; color: #fde68a; font-weight: 700;">METEOR WORD</div>
+            <div style="font-size: 26px; font-weight: 900; color: #ffffff;" id="meteorWordText">pencil</div>
+          </div>
+
+          <!-- 底部激光炮台与发射选项 -->
+          <div style="margin-top: auto; position: relative; z-index: 10; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.15); border-radius: 14px; padding: 14px 18px;">
+            <div style="text-align: center; font-size: 13px; color: #94a3b8; margin-bottom: 10px;">
+              ⚡ 点击对应中文释义发射激光炮，在陨石撞击基地前将其摧毁！
+            </div>
+            <div class="flash-options-grid" id="meteorOptionsGrid">
+              <!-- 4 选 1 激光发射按钮 -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 游戏 3: 单词连连看 (中英消除) -->
+      <div id="game-match-view" class="game-sub-view" style="display: none;">
+        <div class="game-stage-wrapper">
+                    <div class="game-hud-bar">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 20px;">⚡</span>
+              <strong style="font-size: 16px; font-weight: 800; color: #0f172a;">单词连连看</strong>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div class="stat-pill-clean">
+                <span style="color: var(--text-muted); font-size: 12px;">⏱️ 倒计时</span>
+                <strong style="color: var(--coral-red); font-family: var(--font-mono); font-size: 16px; margin-left: 4px;" id="gameCountdown">60s</strong>
+              </div>
+
+              <div class="stat-pill-clean">
+                <span style="color: var(--text-muted); font-size: 12px;">⭐ 配对得分</span>
+                <strong style="color: var(--theme-primary); font-family: var(--font-mono); font-size: 16px; margin-left: 4px;" id="gameScore">0</strong>
+              </div>
+
+              <button class="btn-clean secondary" id="btnRestartGame" onclick="window.app.startNewGame()" style="padding: 6px 14px; font-size: 13px; font-weight: 600;">
+                🔄 换一局新词
+              </button>
+            </div>
+          </div>
+
+          <div class="game-grid-arena" id="gameGridArena">
+            <!-- 动态生成 12 张卡片 -->
+          </div>
+
+          <!-- 通关结算提示 -->
+          <div id="gameWinBanner" style="display: none; text-align: center; padding: 20px; background: var(--theme-bg-subtle); border-radius: 14px; border: 2px dashed var(--theme-primary);">
+            <span style="font-size: 48px;">🎉</span>
+            <h3 style="font-size: 20px; font-weight: 900; color: var(--theme-primary); margin: 6px 0;">太棒了！全部连线消除成功！</h3>
+            <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px;">单词反射敏锐度极佳，获得能量水晶 +50！</p>
+            <button class="btn-clean primary" onclick="window.app.startNewGame()">再来一局</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 视图 3: 错题库 (支持按日期、年级与无框现代智能搜索 · 支持折叠展开) ================= -->
+    <section class="view-panel" id="view-mistakes">
+      <!-- 顶部操作条：年级 + 时间 + 舒展长条智能搜索框 + 一键消灭错题 -->
+      <div class="compact-filter-bar" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1;">
+          <!-- 1. 智能搜索排在最前面 (视觉主焦点 · 舒展宽阔长条) -->
+          <div class="modern-search-capsule" style="flex: 1; min-width: 280px; max-width: 480px;">
+            <span class="search-lens-icon">🔍</span>
+            <input type="text" class="modern-search-input" id="mistakeSearchInput" placeholder="智能检索错词、释义、音标或日期..." autocomplete="off">
+            <button class="search-clear-btn" id="btnClearMistakeSearch" title="清空搜索" type="button">✕</button>
+          </div>
+
+          <!-- 2. 年级选项 (内嵌式胶囊下拉框：框内直观呈现当前年级，点击自动弹出下拉) -->
+          <select class="compact-select-pill" id="mistakeFilterGrade" title="选择需要筛选的年级">
+            <option value="all">🏷️ 年级: 全部 (1~6)</option>
+            <option value="1">🏷️ 年级: 一年级</option>
+            <option value="2">🏷️ 年级: 二年级</option>
+            <option value="3">🏷️ 年级: 三年级</option>
+            <option value="4">🏷️ 年级: 四年级</option>
+            <option value="5">🏷️ 年级: 五年级</option>
+            <option value="6">🏷️ 年级: 六年级</option>
+          </select>
+
+          <!-- 3. 时间选项 (内嵌式胶囊下拉框：框内直观呈现时间范围，点击自动弹出下拉) -->
+          <select class="compact-select-pill" id="mistakeFilterDate" title="选择发生错题的时间范围">
+            <option value="all">⏱️ 时间: 全部历史</option>
+            <option value="today">⏱️ 时间: 今天错词</option>
+            <option value="week">⏱️ 时间: 近 7 天</option>
+          </select>
+        </div>
+
+        <div style="flex-shrink: 0;">
+          <button class="btn-clean primary" id="btnDrillMistakes" style="font-size: 13px; padding: 7px 16px; font-weight: 800; background: #059669;">
+            ⚡ 一键消灭当前错题
+          </button>
+        </div>
+      </div>
+
+      <!-- 错题清单卡片 (支持折叠展开) -->
+      <div class="mistake-list-card" style="background: #ffffff; border: 1px solid var(--border-card); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-sm); margin-top: 14px;">
+        <div class="mistake-card-header" id="btnToggleMistakeAccordion" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; cursor: pointer; user-select: none;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 18px;">🎯</span>
+            <strong style="font-size: 15px; color: #0f172a;">错题本全量清单</strong>
+            <span class="badge-pill" id="mistakeTotalCountBadge" style="background: #fee2e2; color: #dc2626; font-size: 12px; font-weight: 800; padding: 2px 10px; border-radius: 999px; border: 1px solid #fca5a5;">
+              0 词待攻坚
+            </span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 12px; font-weight: 800; color: #0284c7;" id="mistakeAccordionToggleText">
+              收起清单 ▴
+            </span>
+          </div>
+        </div>
+
+        <!-- 折叠主体 -->
+        <div id="mistakeAccordionBody" style="display: block;">
+          <div class="data-table-wrapper" style="border: none; border-radius: 0; box-shadow: none;">
+            <table class="data-table" style="table-layout: auto;">
+              <thead>
+                <tr>
+                  <th class="align-center" style="width: 65px; white-space: nowrap;">序号</th>
+                  <th class="align-left" style="width: 140px; white-space: nowrap;">薄弱单词</th>
+                  <th class="align-left" style="width: 130px; white-space: nowrap;">国际音标</th>
+                  <th class="align-left" style="min-width: 160px;">中文释义</th>
+                  <th class="align-center" style="width: 100px; white-space: nowrap;">归属年级</th>
+                  <th class="align-center" style="width: 120px; white-space: nowrap;">累计拼错次数</th>
+                  <th class="align-center" style="width: 130px; white-space: nowrap;">最近出错时间</th>
+                  <th class="align-center" style="width: 75px; white-space: nowrap;">发音</th>
+                </tr>
+              </thead>
+              <tbody id="mistakeTableBody">
+                <!-- 动态生成 -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 视图 4: 家长看板 (纯净三部曲：今日学习进度 · 出词设置 · 各年级掌握度) ================= -->
+    <section class="view-panel" id="view-analytics">
+      
+      <!-- ================= 第一部分：今日学习进度 (极简横向指示 · 去卡片化 · 自解释) ================= -->
+      <div class="parent-progress-strip">
+        <div class="progress-strip-header">
+          <div class="progress-strip-left">
+            <span class="icon">📅</span>
+            <strong class="title">今日学习进度</strong>
+            <span class="status-indicator" id="reportOverallStatus">● 今日探索进行中</span>
+          </div>
+          <!-- 简简单单说明掌握得怎么样、学得怎么样 -->
+          <div class="progress-strip-summary" id="parentDailySummaryText">
+            今日 3 大环节已通关 <strong id="summaryStepsDone" style="color: #10b981;">0</strong> / 3 · 今日掌握 <strong id="summaryMasteredToday" style="color: #0284c7;">0</strong> 词 · 正确率 <strong id="summaryAccuracy" style="color: #f59e0b;">100%</strong>
+          </div>
+        </div>
+
+        <!-- 3 环节轻量状态药丸组 (平铺横向流，非厚重卡片) -->
+        <div class="step-pill-row">
+          <div class="step-pill-item" id="stepReport1">
+            <span class="step-pill-name">环节 1 · 读写学词</span>
+            <span class="step-pill-status" id="stepReportText1">待开始</span>
+          </div>
+          <div class="step-pill-item" id="stepReport2">
+            <span class="step-pill-name">环节 2 · 看图默写</span>
+            <span class="step-pill-status" id="stepReportText2">待开始</span>
+          </div>
+          <div class="step-pill-item" id="stepReport3">
+            <span class="step-pill-name">环节 3 · 听音辨义</span>
+            <span class="step-pill-status" id="stepReportText3">待开始</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= 第二部分（重点）：出词设置 (词源范围 + 出词规则 + 适用场景 + 统计复核清单) ================= -->
+      <div class="parent-word-config-card">
+        <div class="config-section-title">
+          <span class="icon">⚙️</span>
+          <strong>出词设置</strong>
+        </div>
+
+        <!-- 1. 词源范围 (单行紧凑横向流式排版 · 支持单选/多选及直接上传多份清单) -->
+        <div class="config-row-group">
+          <div class="config-label-inline">词源范围：</div>
+          <div class="config-content-flow">
+            <div class="grade-checkboxes-row" style="flex-wrap: wrap; margin-bottom: 0; align-items: center; gap: 8px;">
+              <label class="grade-cb-item">
+                <input type="checkbox" name="parentGradeCombo" value="1" checked> 一年级
+              </label>
+              <label class="grade-cb-item">
+                <input type="checkbox" name="parentGradeCombo" value="2" checked> 二年级
+              </label>
+              <label class="grade-cb-item">
+                <input type="checkbox" name="parentGradeCombo" value="3" checked> 三年级
+              </label>
+              <label class="grade-cb-item">
+                <input type="checkbox" name="parentGradeCombo" value="4" checked> 四年级
+              </label>
+              <label class="grade-cb-item">
+                <input type="checkbox" name="parentGradeCombo" value="5" checked> 五年级
+              </label>
+              <label class="grade-cb-item">
+                <input type="checkbox" name="parentGradeCombo" value="6" checked> 六年级
+              </label>
+              <!-- 错题专项词库 -->
+              <label class="grade-cb-item cb-mistakes-highlight" style="border-color: #f97316; background: #fff7ed; color: #c2410c; font-weight: 800;">
+                <input type="checkbox" id="cbIncludeMistakes"> 🔥 错题专项词库 (<span id="parentMistakesCountLabel">0</span> 词)
+              </label>
+
+              <!-- 快捷全选/清空 -->
+              <div style="display: inline-flex; gap: 4px; margin-left: 4px;">
+                <button type="button" class="btn-clean secondary" id="btnSelectAllGrades" style="font-size: 11px; padding: 3px 8px; border-radius: 4px;">全选</button>
+                <button type="button" class="btn-clean secondary" id="btnClearAllGrades" style="font-size: 11px; padding: 3px 8px; border-radius: 4px;">清空</button>
+              </div>
+
+              <!-- 直接上传特训清单入口 -->
+              <input type="file" id="parentDirectUploadInput" accept=".xlsx,.xls,.csv,.json" style="display: none;">
+              <button type="button" class="btn-clean primary" id="btnParentDirectUpload" style="font-size: 12px; padding: 4px 12px; background: #0284c7; display: inline-flex; align-items: center; gap: 4px; margin-left: 6px;">
+                ➕ 上传特训清单 (Excel/CSV)
+              </button>
+            </div>
+            <!-- 动态渲染多份已上传清单胶囊 (支持单选/多选/独立特训/一键删除) -->
+            <div id="parentCustomVocabPoolContainer" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;"></div>
+          </div>
+        </div>
+
+        <!-- 2. 出词规则 (多选、频率与概率) -->
+        <div class="config-row-group">
+          <div class="config-label-inline">出词规则：</div>
+          <div class="config-content-flow">
+            <div class="config-rules-controls" style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+              <!-- 单次出题量 (内嵌式胶囊卡片下拉) -->
+              <select class="compact-select-pill" id="parentTargetWordCount" title="选择单次出题量">
+                <option value="10">📝 题量: 每次抽 10 词 (精炼快速)</option>
+                <option value="20" selected>📝 题量: 每次抽 20 词 (日常达标)</option>
+                <option value="30">📝 题量: 每次抽 30 词 (强化通关)</option>
+                <option value="all">📝 题量: 全量抽测 (池内所有词)</option>
+              </select>
+
+              <!-- 目标时长 (内嵌式胶囊卡片下拉 · 提供 5 ~ 60 分钟阶梯选项) -->
+              <select class="compact-select-pill" id="parentTargetDuration" title="选择每日目标时长">
+                <option value="5">⏱️ 时长: 5 分钟 (极速碎片)</option>
+                <option value="10">⏱️ 时长: 10 分钟 (课间冲刺)</option>
+                <option value="15">⏱️ 时长: 15 分钟 (每日短练)</option>
+                <option value="20">⏱️ 时长: 20 分钟 (轻度温故)</option>
+                <option value="25">⏱️ 时长: 25 分钟 (番茄时钟)</option>
+                <option value="30">⏱️ 时长: 30 分钟 (半程达标)</option>
+                <option value="35">⏱️ 时长: 35 分钟 (适度强化)</option>
+                <option value="40">⏱️ 时长: 40 分钟 (标准课堂)</option>
+                <option value="45">⏱️ 时长: 45 分钟 (适中高效)</option>
+                <option value="50">⏱️ 时长: 50 分钟 (深度攻坚)</option>
+                <option value="55">⏱️ 时长: 55 分钟 (高能冲顶)</option>
+                <option value="60" selected>⏱️ 时长: 60 分钟 (日常一小时)</option>
+              </select>
+
+              <!-- 频率与概率机制 -->
+              <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 800; color: #0284c7; cursor: pointer;">
+                <input type="checkbox" id="cbPreventRepeat7Days" checked>
+                <span>7天防重复防扎堆 (同天练习绝不重复抽同一词)</span>
+              </label>
+
+              <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 800; color: #ea580c; cursor: pointer;">
+                <input type="checkbox" id="cbPrioritizeWeakWords" checked>
+                <span>薄弱词智能加权 (艾宾浩斯防遗忘 · 优先抽近期错词与待巩固生词)</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. 适用场景 (选择适用的模块) -->
+        <div class="config-row-group">
+          <div class="config-label-inline">适用场景：</div>
+          <div class="config-content-flow">
+            <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+              <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 800; color: #059669; cursor: pointer;">
+                <input type="checkbox" id="cbApplyToTraining" checked>
+                <span>🚀 适用于“今日挑战” (4 大闯关环节)</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 800; color: #7e22ce; cursor: pointer;">
+                <input type="checkbox" id="cbApplyToGames" checked>
+                <span>🎮 适用于“单词游戏” (推兵 / 消陨石 / 连连看)</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. 统计分析与出词候选复核清单 (设置完后供家长复核变化) -->
+        <div class="candidate-audit-box">
+          <div class="candidate-stat-bar">
+            <div class="candidate-stat-left">
+              📊 <strong>当前候选总池：<span id="statCandidateTotal" style="color: var(--sky-blue); font-weight: 900;">0</span> 词</strong>
+              <span style="margin: 0 8px; color: #cbd5e1;">|</span>
+              本次单次抽取：<strong id="statDrawCount" style="color: #10b981; font-weight: 900;">20</strong> 词
+              <span style="margin: 0 8px; color: #cbd5e1;">|</span>
+              近 7 天未测生词：<strong id="statUnseenPercent" style="color: #059669; font-weight: 900;">100%</strong> (<span id="statUnseenCount">0</span> 词)
+              <span style="margin: 0 8px; color: #cbd5e1;">|</span>
+              错题专项攻坚：<strong id="statMistakePercent" style="color: #ea580c; font-weight: 900;">0%</strong> (<span id="statMistakeCount">0</span> 词)
+            </div>
+            <div class="candidate-stat-right">
+              <button class="btn-clean secondary" id="btnToggleCandidateAccordion" type="button" style="font-size: 12px; padding: 5px 14px; font-weight: 800; border-radius: 999px;">
+                📋 复核出词候选清单 (<span id="candidateCountBadge">0</span> 词) <span id="candidateAccordionToggleArrow">▾</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 候选词明细折叠区域 (复核清单 · 支持分类筛选、搜索、导出Excel、自由勾选组建新词单) -->
+          <div id="candidateAccordionBody" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #cbd5e1;">
+            <!-- 工具栏：智能筛选(前置) + 分类胶囊筛选(后置) + 全选筛选 + 导出筛选 Excel -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 10px; background: #ffffff; padding: 8px 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <!-- 1. 智能筛选前置 (自由模糊检索框) -->
+                <div class="modern-search-capsule" style="width: 220px; min-width: 170px; height: 38px;">
+                  <span class="search-icon">🔍</span>
+                  <input type="text" id="candidateListSearchInput" placeholder="智能检索：单词、中文或词类..." style="font-size: 12px;">
+                </div>
+
+                <!-- 2. 分类筛选后置 (内嵌式胶囊卡片下拉框) -->
+                <select id="candidateFilterCategory" class="compact-select-pill" title="选择分类筛选">
+                  <option value="all">🏷️ 分类: 全部分类 (全部候选词)</option>
+                  <option value="1">🏷️ 分类: 一年级</option>
+                  <option value="2">🏷️ 分类: 二年级</option>
+                  <option value="3">🏷️ 分类: 三年级</option>
+                  <option value="4">🏷️ 分类: 四年级</option>
+                  <option value="5">🏷️ 分类: 五年级</option>
+                  <option value="6">🏷️ 分类: 六年级</option>
+                  <option value="mistake">🔥 分类: 错题专项</option>
+                </select>
+
+                <label style="display: flex; align-items: center; gap: 4px; font-size: 12px; color: #475569; cursor: pointer; user-select: none;">
+                  <input type="checkbox" id="cbSelectAllFiltered">
+                  <span>全选当前筛选</span>
+                </label>
+
+                <span style="font-size: 11px; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 999px; font-weight: 800;" id="candidateFilteredCountBadge">全部 728 词</span>
+              </div>
+
+              <div>
+                <button type="button" class="btn-clean secondary" id="btnExportFilteredCandidate" style="font-size: 12px; padding: 4px 12px; font-weight: 800; border-color: #10b981; color: #047857; background: #ffffff;">
+                  📊 导出当前筛选词单 (.xlsx)
+                </button>
+              </div>
+            </div>
+
+            <!-- 勾选浮动工具栏 (有勾选单词时激活) -->
+            <div id="candidateSelectedActionToolbar" style="display: none; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 8px 14px; margin-bottom: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+              <div style="font-size: 13px; color: #1e40af; font-weight: 700;">
+                已手动打勾勾选 <strong id="selectedWordCount" style="color: #0284c7; font-size: 15px;">0</strong> 个单词
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <button type="button" class="btn-clean primary" id="btnSaveSelectedAsCustomVocab" style="font-size: 12px; padding: 5px 14px; font-weight: 800; background: #0284c7;">
+                  ★ 保存为专属特训词单并加入词源
+                </button>
+                <button type="button" class="btn-clean secondary" id="btnExportSelectedWords" style="font-size: 12px; padding: 5px 12px; font-weight: 800; border-color: #0284c7; color: #0369a1; background: #ffffff;">
+                  📥 导出勾选词单 (Excel)
+                </button>
+                <button type="button" class="btn-clean secondary" id="btnClearSelectedWords" style="font-size: 12px; padding: 5px 10px;">
+                  清空勾选
+                </button>
+              </div>
+            </div>
+
+            <!-- 候选词标签列表容器 -->
+            <div id="candidateWordListGrid" style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 250px; overflow-y: auto; padding: 8px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <!-- 动态渲染候选词标签 (带微型复选框、释义、年级/分类标) -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ================= 第三部分：各年级词汇掌握度 (紧凑收敛 · 简简单单说明 · 不占大地方) ================= -->
+      <div class="parent-grades-compact-card">
+        <div class="compact-grades-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 16px;">📈</span>
+            <strong style="font-size: 14px; color: #0f172a;">各年级词汇掌握度</strong>
+            <span style="font-size: 12px; color: var(--text-muted);">(标准教纲核心词汇掌握情况)</span>
+          </div>
+          <span style="font-size: 12px; color: #64748b;" id="gradesOverviewText">全套 6 个年级累计已精通 0 / 728 词</span>
+        </div>
+
+        <div class="grade-dashboard-grid" id="gradeAnalyticsGrid">
+          <!-- 动态生成 1~6 年级微型进度芯片卡片 -->
+        </div>
+      </div>
+
+      <!-- 隐藏兼容按钮 (用于支持全量档案备份/恢复逻辑无缝运行) -->
+      <button id="btnExportProgress" style="display: none;"></button>
+      <button id="btnImportProgress" style="display: none;"></button>
+      <input type="file" id="importFileInput" accept=".json" style="display: none;">
+
+    </section>
+
+    <!-- ================= 视图 5: 词库配置 (方案 C 极简控制中心 · 自解释结构化流) ================= -->
+    <section class="view-panel sub-view" id="view-settings">
+      <div class="settings-control-card">
+        
+        <!-- ================= 模块一：当前教材教纲与在学词库 (翡翠绿晶) ================= -->
+        <div class="settings-module-card module-theme-green">
+          <div class="settings-module-header">
+            <div class="settings-module-title-box">
+              <div class="settings-module-title">
+                <span>📘 模块一：当前教材版本与在学核心词库</span>
+                <span id="settingVocabCountBadge" class="badge-pill" style="background: #ffffff; color: #059669; font-size: 12px; font-weight: 800; padding: 2px 10px; border-radius: 999px; border: 1px solid #86efac;">
+                  人教版 PEP · 实装 728 词
+                </span>
+              </div>
+              <div class="settings-module-desc">
+                国家义务教育英语课程标准核心词库。选择孩子学校当前使用的标准英语教材版本，系统将按该大纲优先排布出题池。
+              </div>
+            </div>
+            <!-- 右上角：数据导出操作，明确分流 -->
+            <div style="flex-shrink: 0;">
+              <button class="btn-clean secondary" id="btnExportCurrentVocab" title="导出为标准 Excel 表格查看" style="font-size: 13px; padding: 7px 16px; font-weight: 800; border-color: #059669; color: #047857; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                📊 导出为 Excel 词表 (.xlsx)
+              </button>
+            </div>
+          </div>
+          
+          <!-- 核心操作流：无多余嵌套白框，横向流畅自解释 -->
+          <div class="module-control-flow" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <select id="settingTextbookVersion" class="compact-select-pill" style="min-width: 290px;" title="选择教材版本">
+              <option value="pep" selected>📚 版本: 人教版 PEP (全国标准教科书 · 全套 728 词)</option>
+              <option value="gd">📚 版本: 广东教科版 (小学 1~6 年级 · 全套 715 词)</option>
+              <option value="fltrp">📚 版本: 外研社新标准 (小学起步版 · 预留)</option>
+              <option value="bnu">📚 版本: 北师大版 (义务教育教科书 · 预留)</option>
+            </select>
+            <button class="btn-clean primary" id="btnApplyVersion" style="font-size: 13px; padding: 7px 18px; font-weight: 800; background: #059669;">
+              ✓ 应用并保存
+            </button>
+            <span id="versionSavedIndicator" class="status-pill-badge" style="color: #059669; border-color: #86efac;">
+              ● 当前生效中 (已保存)
+            </span>
+          </div>
+        </div>
+
+        <!-- ================= 模块二：校内装书 · 家长专属特训词库 (海天蓝晶) ================= -->
+        <div class="settings-module-card module-theme-blue">
+          <div class="settings-module-header">
+            <div class="settings-module-title-box">
+              <div class="settings-module-title">
+                <span>📁 模块二：校内装书 · 家长专属特训词库</span>
+                <span class="badge-pill" style="background: #ffffff; color: #0284c7; font-size: 12px; font-weight: 800; padding: 2px 10px; border-radius: 999px; border: 1px solid #7dd3fc; white-space: nowrap;" id="customVocabBadge">
+                  已上传 0 个特训词库
+                </span>
+              </div>
+              <div class="settings-module-desc">
+                支持家长多次上传学校周测生词、期末冲刺专项词单（兼容 .xlsx / .csv / .json）。系统纯离线自动解析并存入出词池。
+              </div>
+            </div>
+            <!-- 右侧操作区：按钮文案凝练，留足呼吸空间 -->
+            <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+              <input type="file" id="customVocabFileInput" accept=".xlsx,.xls,.csv,.json" style="display: none;">
+              <button class="btn-clean secondary" id="btnDownloadExcelTemplate" style="font-size: 12px; padding: 7px 14px; font-weight: 800; border-color: #0284c7; color: #0369a1; background: #ffffff;">
+                📥 下载 Excel 模板
+              </button>
+              <button class="btn-clean primary" id="btnImportCustomVocab" style="font-size: 13px; padding: 7px 16px; font-weight: 800; background: #0284c7;">
+                ➕ 上传词单 (Excel/JSON)
+              </button>
+            </div>
+          </div>
+
+          <!-- 自定义词库卡片清单 -->
+          <div id="customVocabListContainer" style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
+            <div style="font-size: 12px; color: #0369a1; font-style: italic; background: rgba(255,255,255,0.7); padding: 10px 14px; border-radius: 8px; border: 1px dashed #7dd3fc;" id="customVocabEmptyHint">
+              暂无已上传词库。点击上方“➕ 上传词单 (Excel/JSON)”或先“📥 下载 Excel 模板”即可快速录入！
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= 模块三：小升初与中高考词库扩充包 (丁香紫晶) ================= -->
+        <div class="settings-module-card module-theme-purple">
+          <div class="settings-module-header">
+            <div class="settings-module-title-box">
+              <div class="settings-module-title">
+                <span>🚀 模块三：小升初与中高考词库扩充包（预留升级接口）</span>
+                <span class="badge-pill" style="background: #ffffff; color: #7e22ce; font-size: 12px; font-weight: 800; padding: 2px 10px; border-radius: 999px; border: 1px solid #d8b4fe;">
+                  小初高一体化预留
+                </span>
+              </div>
+              <div class="settings-module-desc">
+                已预留初中 1600 考纲核心词与高考 3500 核心词库数据模型接口，升级扩展包后可一键解锁初中高阶关卡与长难句进阶模块。
+              </div>
+            </div>
+          </div>
+
+          <div class="sub-upgrade-grid">
+            <div class="sub-upgrade-card">
+              <div>
+                <div style="font-size: 14px; font-weight: 800; color: #581c87; margin-bottom: 2px;">📚 初中 7~9 年级扩展词库包</div>
+                <div style="font-size: 12px; color: #7e22ce;">中考 1600 考纲标准核心词库</div>
+              </div>
+              <button class="btn-clean primary" id="btnUpgradeJunior" style="font-size: 12px; padding: 6px 14px; font-weight: 800; background: #7e22ce;">
+                ⚡ 立即激活 (1600词)
+              </button>
+            </div>
+
+            <div class="sub-upgrade-card">
+              <div>
+                <div style="font-size: 14px; font-weight: 800; color: #581c87; margin-bottom: 2px;">🎓 高中 1~3 年级扩展词库包</div>
+                <div style="font-size: 12px; color: #7e22ce;">高考 3500 核心与衍生搭配词库</div>
+              </div>
+              <button class="btn-clean secondary" id="btnUpgradeSenior" style="font-size: 12px; padding: 6px 14px; font-weight: 800; border-color: #7e22ce; color: #581c87; background: #ffffff;">
+                ⚡ 立即激活 (3500词)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= 模块四：系统运行架构与学习档案全量备份 (科技灰蓝) ================= -->
+        <div class="settings-module-card module-theme-slate">
+          <div class="settings-module-header">
+            <div class="settings-module-title-box">
+              <div class="settings-module-title">
+                <span>💾 模块四：系统底层运行架构与全量档案备份</span>
+                <span class="badge-pill" style="background: #ffffff; color: #059669; font-size: 12px; font-weight: 800; padding: 2px 10px; border-radius: 999px; border: 1px solid #a7f3d0;">
+                  🟢 100% 本地纯离线正常运行
+                </span>
+              </div>
+              <div class="settings-module-desc">
+                纯本地离线引擎，0 云端大模型依赖，拔掉网线照样秒开。将打卡天数、错题本、艾宾浩斯复习曲线打包保存，换设备随时迁移。
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <button class="btn-clean secondary" id="btnExportSettings" style="font-size: 13px; padding: 7px 16px; border-color: #10b981; color: #047857; font-weight: 800; background: #ffffff;">
+                📤 导出全量学习档案
+              </button>
+              <button class="btn-clean secondary" id="btnImportSettings" style="font-size: 13px; padding: 7px 16px; font-weight: 800; background: #ffffff;">
+                📥 导入恢复档案
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= 模块五：危险操作 · 清空数据与系统重置 (警戒浅红) ================= -->
+        <div class="settings-module-card module-theme-red">
+          <div class="settings-module-header">
+            <div class="settings-module-title-box">
+              <div class="settings-module-title">
+                <span>⚠️ 模块五：危险区域 · 清空所有学习记录与系统重置</span>
+              </div>
+              <div class="settings-module-desc">
+                彻底清空保存在本设备中的所有打卡天数、错题记录、艾宾浩斯复习曲线与已学进度（操作不可逆，请先在模块四导出备份！）。
+              </div>
+            </div>
+            <div>
+              <button class="btn-clean danger" id="btnForceReset" style="font-size: 13px; padding: 8px 18px; font-weight: 800;">
+                🗑️ 强制重置系统
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 整合脚本 -->
+  <script src="js/xlsx.full.min.js"></script>
+  <script src="js/bundle.js"></script>
+  <!-- ================= 🎉 今日挑战大捷结算弹窗 (全屏通关模态框) ================= -->
+  <div class="victory-modal-overlay" id="victorySummaryModal" style="display: none;">
+    <div class="victory-modal-card">
+      <div class="victory-modal-badge">🎉 QUEST COMPLETED</div>
+      <div style="font-size: 64px; line-height: 1; margin: 14px 0 6px;" id="feedPetAvatar">🍃</div>
+      <h2 style="font-size: 22px; font-weight: 900; color: #0f172a; margin-bottom: 6px;">
+        今日挑战大捷！领取星徽与经验值
+      </h2>
+      <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.6;" id="feedSummaryText">
+        今日已读写学词 0 词 · 看图默写 0 词 · 听音辨义 0 词！
+      </p>
+
+      <div style="max-width: 360px; height: 14px; background: #e2e8f0; border-radius: 7px; margin: 12px auto; overflow: hidden;">
+        <div id="petExpFill" style="height: 100%; background: var(--theme-banner); width: 60%; transition: width 0.6s ease;"></div>
+      </div>
+      <span style="font-size: 12px; font-weight: 800; color: var(--theme-primary); display: block; margin-bottom: 20px;" id="petExpText">
+        森之精灵 当前等级 Lv.1 (经验值 60 / 150)
+      </span>
+
+      <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+        <button class="btn-clean primary" id="btnFeedPet" style="padding: 10px 22px; font-weight: 800;">
+          ✨ 投喂能量水晶 (+50 经验)
+        </button>
+        <button class="btn-clean secondary" id="btnRestartNextRound" style="padding: 10px 18px; font-weight: 800;">
+          🔄 开启新一轮挑战
+        </button>
+        <button class="btn-clean secondary" id="btnCloseVictoryModal" style="padding: 10px 18px;">
+          ✕ 返回大厅
+        </button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

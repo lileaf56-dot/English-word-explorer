@@ -1,0 +1,18 @@
+# 系统与运行缓存
+__pycache__/
+*.pyc
+*.tmp
+scratch/
+
+# 本地中间过程临时脚本
+scratch_*.py
+
+# 操作系统系统文件
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# 编辑器与IDE配置
+.vscode/
+.idea/
+*.log
